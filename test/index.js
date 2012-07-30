@@ -70,6 +70,21 @@ describe("ff", function () {
 		});
 	});
 
+	describe("#exceptions()", function () {
+		it("should be propagated", function (done) {
+			function caught () {
+				process.listeners('uncaughtException').push(originalListener);
+				done();
+			}
+			var originalListener = process.listeners('uncaughtException').pop();
+			process.once('uncaughtException', caught);
+ 			ff(function () {
+				throw 4;
+			}, function () {
+			});
+		});
+	});
+
 });
 
 describe("ff, with context", function () {

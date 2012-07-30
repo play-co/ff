@@ -58,7 +58,7 @@ describe("ff", function () {
 	});
 
 	describe("#done()", function () {
-		it("should break out of execution immediately", function () {
+		it("should break out of execution immediately", function (done) {
 			ff(function () {
 				setTimeout(done, 100);
 				this.exit();
@@ -69,6 +69,7 @@ describe("ff", function () {
 			}));
 		});
 	});
+
 });
 
 describe("ff, with context", function () {

@@ -53,7 +53,7 @@ function (req, res, next) {
 
 # API Documentation
 
-## First, call `ff`.
+## First, call `ff` and save its return value (as `f`, perhaps).
 
 #### `var f = ff([context], stepFunctions... )`
     
@@ -62,24 +62,33 @@ functions, which we call "steps". Each step is run one at a time. Use
 `ff`'s return value (often called `f`) to create callbacks for any
 async functions used in each step.
 
-## Second, use the returned `f` object inside each step.
+## Second, use the returned `f` object inside each step function.
 
-- **Put simply, pass `f()` to any async function.** This reserves a
-  slot in the next step's function arguments.
-- If you want to pass something synchronously to the next step, just
-  pass them as arguments: `f(myarg1)`. Again, this takes up
-  another slot in the next function's argument list.
-- Sometimes you need something slightly more powerful, like waiting
-  without passing arguments, handling arrays, or using functions that
-  don't normally accept an `err` argument. You can call methods on `f`
-  as documented below to handle all of those cases.
+**Within your step functions, pass `f()` as the callback parameter to
+any async function.** This reserves a "slot" in the next step's
+function arguments. For instance:
+
+```javascript
+	fs.readFile("1.txt", f()); // fs.readFile will use that as a callback.
+```
+
+Most often, that's all you'll need, but there are other ways to pass
+data:
+
+```javascript
+	f(data); // pass data synchronously to the next function
+	fs.exists("1.txt", f.slotNoError()); // fs.exists doesn't pass (err, result), just (result)
+	emitter.once("close", f.wait()); // just wait for the "close" event
+```
+
+### All Methods on `f`:
 
 #### `f()`
 
 Calling `f()` reserves a slot in the next step's function arguments,
 and returns a callback that you should pass into an async function.
-This is an alias for `f.slot()`. The async function should be called
-with an error as in `callback(err, result)`.
+The async function should be called with an error as in `callback(err,
+result)`. This is an alias for `f.slot()`.
 
 #### `f(arg1, arg2...)`
 
@@ -232,7 +241,7 @@ function compareFiles(pathA, pathB, cb) {
         fs.readFile(pathA, f());
         fs.readFile(pathB, f());
     }, function (fileA, fileB) {
-        f(fileA == fileB);
+        f(fileA == fileB); // pass the result to cb
     }).cb(cb);
 }
 ```
@@ -298,4 +307,4 @@ function compareFiles(pathA, pathB, cb) {
 
 This code was originally based on
 [Tim Caswell](mailto:tim@creationix.com)'s sketch of a
-[reimagined Step](https://gist.github.com/1524578#comments) library.
+[reimagined Step](https://gist.github.com/1524578#comments) library, 

@@ -1,9 +1,9 @@
 # ff: Concise, Powerful Asynchronous Flow Control in JavaScript
 
 ***ff* simplifies the most common use cases for series, parallel, and
-promise utilities in one concise package.** It was built because
-existing async libraries are too verbose and don't handle errors
-properly. Don't let your errors go unhandled. :-)
+promise utilities.** It was built because existing async libraries are
+too verbose and don't handle errors properly. Don't let your errors go
+unhandled. :-)
 
 #### Installation
 

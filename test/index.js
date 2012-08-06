@@ -90,7 +90,7 @@ describe("ff", function () {
 describe("ff, with context", function () {
 
 	describe("#pass()", function () {
-		it("`this` should refert to newly created object", function (done) {
+		it("`this` should revert to newly created object", function (done) {
 			function MyContext() {
 				this.foo = true;
 			}
@@ -115,6 +115,55 @@ describe("ff, with context", function () {
 					var sg = ff(this, function () {
 						var one = sg.slot();
 						var two = sg.slot();
+
+						setTimeout(function () {
+							one(null, 1);
+						}, 300);
+
+						setTimeout(function () {
+							two(null, 2);
+						}, 200)
+					}, function (one, two) {
+						assert.equal(one, 1);
+						assert.equal(two, 2);
+						assert.equal(typeof this.test, "function");
+					}, ff.cb(done));
+				}
+			};
+			context.test();
+		});
+	});
+});
+
+describe("ff, new-style", function () {
+
+	describe("#pass()", function () {
+		it("`this` should revert to newly created object", function (done) {
+			function MyContext() {
+				this.foo = true;
+			}
+			var context = new MyContext();
+			var sg = ff(context, function () {
+				var foo = { bar: false };
+				sg(foo, foo);
+				foo.bar = true;
+			}, function (foo, alsoFoo) {
+				assert(foo);
+				assert(foo.bar);
+				assert(alsoFoo.bar);
+				// test context
+				assert(this.foo);
+			}, ff.cb(done));
+		});
+	});
+
+	describe("#slot()", function () {
+		it("should retain scope of current object", function (done) {
+			var context = {
+				test: function () {
+					var sg = ff(this, function () {
+						var one = sg();
+						var two = sg();
 
 						setTimeout(function () {
 							one(null, 1);

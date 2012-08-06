@@ -331,4 +331,4 @@ If you have better examples, please submit them!
 
 This code was originally based on
 [Tim Caswell](mailto:tim@creationix.com)'s sketch of a
-[reimagined Step](https://gist.github.com/1524578#comments) library, 
+[reimagined Step](https://gist.github.com/1524578#comments) library.

@@ -1,7 +1,7 @@
 {
 	"name": "ff",
-	"version": "0.0.7",
-	"description": "Asynchronous flow control library for node (and browsers)",
+	"version": "0.0.8",
+	"description": "Concise, Powerful Asynchronous Flow Control in JavaScript",
 	"engine": [ "node >=0.2.0" ],
 	"author": "Marcus Cavanaugh <m@mcav.com>",
 	"contributors": [

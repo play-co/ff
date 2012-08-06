@@ -1,4 +1,4 @@
-# ff: Simple & Safe Asynchronous Flow Control in JavaScript
+# ff: Concise, Powerful Asynchronous Flow Control in JavaScript
 
 ***ff* simplifies the most common use cases for series, parallel, and
 promise utilities in one concise package.** It was built because
@@ -9,6 +9,13 @@ properly. Don't let your errors go unhandled. :-)
 
 - **Node.JS: `npm install ff`**
 - Browsers: Add `lib/ff.js` to your HTML page.
+
+## Table of Contents
+
+- [Quick Examples](#quick-examples)
+- [API Documentation](#api-documentation)
+- [Advanced Usage](#advanced-usage)
+- [Compared to Other Async Libraries](#compared-to-other-async-libraries)
 
 ## Quick Examples
 
@@ -46,14 +53,26 @@ function (req, res, next) {
 
 # API Documentation
 
-## `var f = ff([context], steps... )`
+## First, call `ff`.
+
+#### `var f = ff([context], stepFunctions... )`
     
 The ``ff`` function takes a context and any number of
 functions, which we call "steps". Each step is run one at a time. Use
 `ff`'s return value (often called `f`) to create callbacks for any
 async functions used in each step.
 
-## What can you do with the returned `f` object inside each step?
+## Second, use the returned `f` object inside each step.
+
+- **Put simply, pass `f()` to any async function.** This reserves a
+  slot in the next step's function arguments.
+- If you want to pass something synchronously to the next step, just
+  pass them as arguments: `f(myarg1)`. Again, this takes up
+  another slot in the next function's argument list.
+- Sometimes you need something slightly more powerful, like waiting
+  without passing arguments, handling arrays, or using functions that
+  don't normally accept an `err` argument. You can call methods on `f`
+  as documented below to handle all of those cases.
 
 #### `f()`
 
@@ -97,7 +116,7 @@ object that has all of the above methods. Anything you slot or pass
 into the group gets passed into the next function's argument list *as
 an array*. (See the Groups example.)
 
-## Result Handlers
+## Finally, remember to handle the result! (`.cb`, `.error`, `.success`)
 
 After you've called `ff()` with your steps, you'll want to handle the
 final result that gets passed down the end of the function. We often
@@ -132,7 +151,9 @@ Additionally, an error object will *not* be passed. Only results.
 #### `f.error( function (err) {} )`
 
 A `.error()` result handler will *only* be called if an error occured.
-(In this case, `err` will never be null.)
+In this case, `err` will never be null. (If you're using Express,
+often we use `.error(next)` to propagate whenever we didn't reach a
+call to `res.send()`.)
 
 **Always remember to add either a `.cb()` or `.success()` handler
 after your `ff()` call, so that errors propagate!**

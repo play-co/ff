@@ -16,10 +16,11 @@ unhandled. :-)
 - [API Documentation](#api-documentation)
 - [Advanced Usage](#advanced-usage)
 - [Compared to Other Async Libraries](#compared-to-other-async-libraries)
+- [More Examples](#more-examples)
 
 ## Quick Examples
 
-Here's a brief example that shows both series and parallel steps:
+Here's a brief example that shows both serial and parallel steps:
 
 ```javascript
 var f = ff(this, function () {
@@ -77,7 +78,7 @@ data:
 
 ```javascript
 	f(data); // pass data synchronously to the next function
-	fs.exists("1.txt", f.slotNoError()); // fs.exists doesn't pass (err, result), just (result)
+	fs.exists("1.txt", f.slotPlain()); // fs.exists doesn't pass (err, result), just (result)
 	emitter.once("close", f.wait()); // just wait for the "close" event
 ```
 
@@ -104,18 +105,18 @@ but you just want to wait until an async call completes successfully.
 This behaves exactly like `f()` and `f.slot()`, handling errors, but
 no arguments are passed to the next step.
 
-#### `f.slotNoError()`
+#### `f.slotPlain()`
 
 This is like `f()` and `f.slot()`, except that the resulting callback
 must *not* accept an error, as in `callback(result)`. Node's
 `fs.exists` doesn't return an error, for instance, and so you must use
-`f.slotNoError()` for its callback instead. (If you had used
+`f.slotPlain()` for its callback instead. (If you had used
 `f.slot()`, it would have thought `fs.exists` had passed an *error* as
 the first argument.
 
-#### `f.waitNoError()`
+#### `f.waitPlain()`
 
-See `f.slotNoError()`. Like `f.wait()`, this does not pass any
+See `f.slotPlain()`. Like `f.wait()`, this does not pass any
 arguments to the next step.
 
 #### `f.group()`
@@ -303,6 +304,29 @@ function compareFiles(pathA, pathB, cb) {
 }
 ```
 
+---
+
+# More Examples
+
+
+### Serial Execution
+
+```javascript
+
+var f = ff(function () {
+	request("POST /auth/", f());
+}, function (userID) {
+	request("GET /users/" + userID, f());
+}, function (userInfo) {
+	request("POST /users/" + userInfo.id, {name: "Spike"}, f.wait());
+}, function () {
+	// all done!
+}).cb(cb);
+
+```
+
+If you have better examples, please submit them!
+    
 ## Acknowledgements
 
 This code was originally based on

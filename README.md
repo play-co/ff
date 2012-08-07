@@ -1,4 +1,4 @@
-# <img src="http://f.cl.ly/items/3K113g321o0n0W0Y0Z33/Fast%20Forward%20Icon%20in%2032x32%20px.png" width=25 height=25> ff: Concise, Powerful Asynchronous Flow Control in JavaScript
+# <img src="http://f.cl.ly/items/3K113g321o0n0W0Y0Z33/Fast%20Forward%20Icon%20in%2032x32%20px.png" width=25 height=25> ff: Concise, Powerful Asynchronous JavaScript Flow Control
 
 ***ff* simplifies the most common use cases for series, parallel, and
 promise utilities.** 

@@ -15,7 +15,6 @@ promise utilities.**
 - [Advanced Usage](#advanced-usage)
 - [Promise API](#promise-api-deferreds)
 - **[Quick Reference & Cheat Sheet](#quick-reference--cheat-sheet)**
-- [More Examples](#more-examples)
 
 ## Intro
 

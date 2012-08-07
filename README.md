@@ -1,24 +1,23 @@
 # ff: Concise, Powerful Asynchronous Flow Control in JavaScript
 
 ***ff* simplifies the most common use cases for series, parallel, and
-promise utilities.** It was built because existing async libraries are
-too verbose and don't handle errors properly. Don't let your errors go
-unhandled. :-)
+promise utilities.** 
 
 #### Installation
 
-- **Node.JS: `npm install ff`**
+- Node.JS: `npm install ff`
 - Browsers: Add `lib/ff.js` to your HTML page.
 
 ## Table of Contents
 
-- [Quick Examples](#quick-examples)
-- [API Documentation](#api-documentation)
+- [Intro](#intro)
+- **[API Documentation](#api-documentation)**
 - [Advanced Usage](#advanced-usage)
-- [Compared to Other Async Libraries](#compared-to-other-async-libraries)
+- [Promise API](#promise-api-deferreds)
+- **[Quick Reference & Cheat Sheet](#quick-reference--cheat-sheet)**
 - [More Examples](#more-examples)
 
-## Quick Examples
+## Intro
 
 Here's a brief example that shows both serial and parallel steps:
 
@@ -33,9 +32,20 @@ var f = ff(this, function () {
 }).cb(cb);
 ```
 
+It also supports promises, using the `ff.defer` function [[docs]](#promise-api-deferreds):
+
+```javascript
+var f = ff.defer(this);
+
+f.success(function(result, result2) { });
+f.error(function (err) { });
+
+f(result, result2); // or f.fail(err);
+```
+
 A typical Express web handler looks like this. (Note that even if an
-exception gets thrown during one of these handlers, it gets passed
-down the chain as an error.)
+exception gets thrown during one of these handlers, the .error()
+handler will be called.
 
 ```javascript
 function (req, res, next) {
@@ -89,35 +99,40 @@ data:
 Calling `f()` reserves a slot in the next step's function arguments,
 and returns a callback that you should pass into an async function.
 The async function should be called with an error as in `callback(err,
-result)`. This is an alias for `f.slot()`.
+result)`.
 
 #### `f(arg1, arg2...)`
 
 If you call `f` with arguments, those arguments will be passed into
 the next step. This can be useful when you need to pass along a value
-directly to the next function synchronously. This is an alias for
-`f.pass()`.
+directly to the next function synchronously.
 
 #### `f.wait()`
 
 Sometimes you don't want to pass any arguments to the next function,
 but you just want to wait until an async call completes successfully.
-This behaves exactly like `f()` and `f.slot()`, handling errors, but
-no arguments are passed to the next step.
+This behaves exactly like `f()`, handling errors, but no arguments are
+passed to the next step.
 
 #### `f.slotPlain()`
 
-This is like `f()` and `f.slot()`, except that the resulting callback
-must *not* accept an error, as in `callback(result)`. Node's
-`fs.exists` doesn't return an error, for instance, and so you must use
-`f.slotPlain()` for its callback instead. (If you had used
-`f.slot()`, it would have thought `fs.exists` had passed an *error* as
-the first argument.
+This is like `f()`, except that the resulting callback must *not*
+accept an error, as in `callback(result)`. Node's `fs.exists` doesn't
+return an error, for instance, and so you must use `f.slotPlain()` for
+its callback instead. (If you had used `f.slot()`, it would have
+thought `fs.exists` had passed an *error* as the first argument.
 
 #### `f.waitPlain()`
 
 See `f.slotPlain()`. Like `f.wait()`, this does not pass any
 arguments to the next step.
+
+#### `f.slotMulti(n)`
+
+Like `f()`, except that the resulting callback will pass `n` arguments
+to the next step instead of just one. For instance, calling `var cb =
+f.slotMulti(2)` followed by `cb(err, rsp, body)` would pass both `rsp`
+and `body` as two arguments to the next step.
 
 #### `f.group()`
 
@@ -125,6 +140,25 @@ This reserves exactly one slot in the next step, and returns a group
 object that has all of the above methods. Anything you slot or pass
 into the group gets passed into the next function's argument list *as
 an array*. (See the Groups example.)
+
+#### `f.succeed(successArgs...)`
+
+This causes the chain of steps to end successfully (after you return
+from the current function). The result handlers (`.success()` and
+`.cb()`) will be called as soon as the current step returns. No other
+steps will be executed afterward.
+
+#### `f.fail(err)`
+
+This causes the chain of steps to end as though the given error had
+occurred (after you return from the current function). The result
+handlers (`.error()` and `.cb()`) will be called as soon as the
+current step returns. No other steps will be executed afterward.
+
+#### `f.next(fn)`
+
+You can add additional steps after calling `ff()` using `f.next(fn)`.
+Internally, we pass the arguments through this function initially.
 
 ## Finally, remember to handle the result! (`.cb`, `.error`, `.success`)
 
@@ -155,7 +189,7 @@ was no error.)
 
 #### `f.success( function (results...) {} )`
 
-A `.success()` handler will *only* be called if no error occur ed.
+A `.success()` handler will *only* be called if no error occured.
 Additionally, an error object will *not* be passed. Only results.
 
 #### `f.error( function (err) {} )`
@@ -165,18 +199,18 @@ In this case, `err` will never be null. (If you're using Express,
 often we use `.error(next)` to propagate whenever we didn't reach a
 call to `res.send()`.)
 
-**Always remember to add either a `.cb()` or `.success()` handler
-after your `ff()` call, so that errors propagate!**
+**Always remember to add one of these result handlers after your
+`ff()` call, so that errors propagate!** You can add multiple result
+handlers and they will all be called simultaneously. 
 
 ### Error Handling
 
 If any function throws an exception, or an error gets passed to one of
-the callbacks (as in `callback(err, result)`), the error will get
-passed down to the next function that can handle the error. In most
-cases, this is the `.cb(cb)` function you added at the end. This is an
-important feature that a lot of async libraries don't handle properly,
-and it ensures that if you specify a `.cb()` or `.error()`, you'll
-always pass back a final callback with an error or a result.
+the callbacks (as in `callback(err, result)`), the error will be
+propagated immediately to your result handlers (`.cb()` and
+`.error()`). If a result handler throws an exception, that exception
+will bubble up into Node's `unhandledException` handler or the
+browser's developer console.
 
 ---
 
@@ -198,7 +232,7 @@ var f = ff(function() {
         fs.readFile(file, group());
     });
 }, function (allFiles) {
-    // allFiles now consists of 3 items (the contents of each file).
+    // allFiles is an array of 3 items (the contents of each file).
     
     // If any call had returned an err, this function would not be
     // called, and the error would have been passed down to `cb`.
@@ -218,117 +252,124 @@ var f = ff(this,
 
 ```javascript
 var f = ff(this);
-f.success(one);
-f.success(two);
+f.next(one);
+f.next(two);
 f.cb(three);
 ```
 
 Error handling is actually quite simple: If an error occurs in any
-step, it gets passed down, skipping over any `.success` handlers.
+step, it gets passed down, skipping over any `.next` handlers.
 
 ---
 
-# Compared to Other Async Libraries
+# Promise API (Deferreds)
 
-Let's say you want to do something simple: Read two files, and
-callback whether or not the two files are equal. And we want any
-errors to be propagated up to the caller.
-
-### Using ff
+Because of the implementation details we just described, `ff` doubles
+as a simple promise library using a very similar API. All you need to
+remember is to call `ff.defer()` instead of `ff()`.
 
 ```javascript
-function compareFiles(pathA, pathB, cb) {
-    var f = ff(function () {
-        fs.readFile(pathA, f());
-        fs.readFile(pathB, f());
-    }, function (fileA, fileB) {
-        f(fileA == fileB); // pass the result to cb
-    }).cb(cb);
-}
-```
-    
-### Using js.io's lib.Callback (promises)
+var f = ff.defer(this);
 
-```javascript
-function compareFiles(pathA, pathB, cb) {
-    var callback = new lib.Callback();
-    fs.readFile(pathA, callback.chain());
-    fs.readFile(pathB, callback.chain());
-    callback.run(function (chains) {
-        var err = chains[0][0] || chains[1][0];
-        if (err) {
-            cb(err);
-        } else {
-            cb(null, chains[0][1] == chains[1][1]);
-        }
-    });
-}
-```
-    
-### Using async
+// set callbacks:
+f.success(function(result, result2) { });
+f.error(function (err) { });
 
-```javascript
-function compareFiles(pathA, pathB, cb) {
-    async.parallel({
-        fileA: function (callback) {
-            fs.readFile(pathA, callback);
-        },
-        fileB: function (callback) {
-            fs.readFile(pathB, callback);
-        }
-    }, function (err, results) {
-        if (err) {
-            cb(err);
-        } else {
-            cb(null, results.fileA == results.fileB);
-        }
-    });
-}
-``` 
-
-### Using Basil's common.parallel
-
-```javascript
-function compareFiles(pathA, pathB, cb) {
-    var wait = common.parallel(function(results) {
-        var err = results.err1 || results.err2;
-        if (err) {
-            cb(err);
-        } else {
-            cb(null, results.fileA == results.fileB);
-        }
-    });
-    
-    fs.readFile(pathA, wait('err1', 'fileA'));
-    fs.readFile(pathB, wait('err2', 'fileB'));
-}
+// now trigger the result:
+f(result, result2); // or f.fail(err);
 ```
 
----
-
-# More Examples
-
-
-### Serial Execution
+To trigger success or failure:
 
 ```javascript
+f(arg1, arg2...) // success
+f.fail(err)      // failure
+```
 
-var f = ff(function () {
-	request("POST /auth/", f());
-}, function (userID) {
-	request("GET /users/" + userID, f());
-}, function (userInfo) {
-	request("POST /users/" + userInfo.id, {name: "Spike"}, f.wait());
+Just like with a regular `ff` call, you can attach `.success()`,
+`.error()`, and `.cb()` handlers. 
+
+You can also pass functions into the `ff.defer(...)` call, just like
+regular `ff`:
+
+```javascript
+var f = ff.defer(function(result, text) {
+	// do something with result
 }, function () {
-	// all done!
+	// ...etc...
 }).cb(cb);
 
+// now fire the result into the first step!
+f(result, "something else");
 ```
 
-If you have better examples, please submit them!
-    
-## Acknowledgements
+Once your chain has succeeded or failed, future `.success()` and
+`.error()` handlers will remember the result and fire immediately. The
+result is stored on `f.result` once available.
+
+---
+# Quick Reference / Cheat Sheet
+
+The [API Documentation](#api-documentation) provides a much more thorough tutorial.
+
+#### Control Flow API Summary
+
+```javascript
+// Create a chain of steps with the `ff` function:
+var f = ff(context, function () {
+	// Within each method, use the `f` object.
+	// Most common uses:
+	f(arg1, arg2); // pass multiple arguments synchronously
+	fs.readFile("file1.txt", f());      // use f() for async callbacks
+	fs.readFile("file2.txt", f.wait()); // just wait for the result
+                                        // without putting it in args
+									 
+	// To process arrays, use groups:
+	var group = f.group();
+	allFiles.forEach(function (item) {   // use any `f` function on arrays
+	    fs.readFile(item, group.slot()); // and the result gets stored as
+	});                                  // an array in the next step
+	
+	// Less common uses for atypical functions
+	fs.exists("file3.txt", f.slotPlain()); // fs.exists doesn't pass an error
+	fs.exists("file4.txt", f.waitPlain()); // ditto, and I don't care if it fails
+	var cb = f.slotMulti(2); // slot and pass two arguments to the next function
+	                         // for example, cb(null, 1, 2);
+	
+	// Aborting the chain of steps early:
+	f.succeed(result1, ...); // after this function, skip the other steps
+	f.fail(err);             // after this function, fail with this error
+}, function (arg1, arg2, file1, allFiles, file3Exists, multi1, multi2) {
+	// Do something amazing here!
+}).cb(cb); // <-- usually you'll have someone else handle a (err, result...) callback
+
+// Don't forget result handlers (often chained to `ff` for conciseness)
+f.cb(function (err, args...) { }); // triggered on both success and error
+f.success(function (args...) { }); // only on success
+f.error(function (err) { });       // only on error
+```
+
+#### Promise API Summary
+
+```javascript
+// Create a deferred
+var f = ff.defer(context);
+// Add result handlers:
+f.success(function (args...) { });
+f.error(function (err) { });
+f.cb(function (err, args...) { }); // triggered on both success and error
+// Trigger results: 
+f(arg1, ...); // success
+f.fail(err);  // failure
+// Get the result synchronously, if available (the error argument is on f.result[0])
+var resultArray = f.result
+```
+
+---
+# Acknowledgements
+
+Made by [Marcus Cavanaugh](http://mcav.com/) and [Michael Henretty](http://twitter.com/mikehenrty).
 
 This code was originally based on
 [Tim Caswell](mailto:tim@creationix.com)'s sketch of a
-[reimagined Step](https://gist.github.com/1524578#comments) library.
+[reimagined](https://gist.github.com/1524578) [Step](https://github.com/creationix/step) library.

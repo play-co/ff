@@ -70,6 +70,35 @@ describe("ff", function () {
 		});
 	});
 
+	describe("#succeed()", function () {
+		it("should work", function (done) {
+			ff(function () {
+				this.succeed(2, 3);
+			}, function () {
+				assert.fail();
+			}).cb(function(err, two, three) {
+				assert(two == 2 && three == 3);
+				done();
+			});
+		});
+	});
+
+	describe("#fail()", function () {
+		it("should work", function (done) {
+			ff(function () {
+				try {
+					this.fail(4);
+				} catch(e) {
+				}
+			}, function () {
+				assert.fail();
+			}).cb(function(err, two) {
+				assert(err == 4 && !two);
+				done();
+			});
+		});
+	});
+
 	describe("#exceptions()", function () {
 		it("should be propagated", function (done) {
 			function caught () {
@@ -180,6 +209,74 @@ describe("ff, new-style", function () {
 				}
 			};
 			context.test();
+		});
+	});
+
+	describe("#defer()", function () {
+		it("should work", function (done) {
+			var f = ff.defer(this);
+			var completed = false;
+			setTimeout(function() { assert(!completed); }, 20);
+			
+			f.success(function() { completed = true; });
+			
+			setTimeout(function() {
+				f("OK");
+			}, 30);
+
+			setTimeout(function() {
+				assert(completed);
+				done();
+			}, 50);
+		});
+
+		it("should retroactively succeed", function (done) {
+			var f = ff.defer(this);
+			f("ok");
+			f.success(function() {
+				done();
+			});
+		});
+
+		it("should retroactively fail", function (done) {
+			var f = ff.defer(this);
+			f.fail(4);
+			f.failure(function(n) {
+				done();
+			});
+		});
+
+		it("should call fns", function (done) {
+			var n = 0;
+			var f = ff.defer(this, function(x){
+				assert(x == 2);
+				f(x);
+				n++;
+			}, function (x) {
+				assert(x == 2);
+				n++;
+			}).cb(function(e) {
+				if (e) throw e;
+				assert(n == 2);
+				done();
+			});
+			f(2);
+		});
+		
+		it("should call multiple handlers", function (done) {
+			var f = ff.defer(this);
+			f.fail(4);
+			f.success(function(n) {
+				assert.fail();
+			});
+			var n = 0;
+			f.failure(function() {
+				n++;
+			});
+			f.failure(function() {
+				assert(n == 1);
+				done();
+			});
 		});
 	});
 });

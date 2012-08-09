@@ -70,6 +70,47 @@ describe("ff", function () {
 		});
 	});
 
+	describe("#timeout()", function () {
+		it("should timeout", function (done) {
+			var f = ff(function () {
+				f.timeout(20);
+				setTimeout(f(), 100);
+			}).error(function (e) {
+				assert.equal(e.message, "timeout");
+				done();
+			}).success(function() {
+				assert.fail();
+			});
+		});
+
+		it("should timeout with defer", function (done) {
+			var f = ff.defer();
+			f.timeout(20);
+			setTimeout(function () {
+				f();
+			}, 100);
+			
+			f.error(function (e) {
+				assert.equal(e.message, "timeout");
+				done();
+			});
+			f.success(function() {
+				assert.fail();
+			});
+		});
+
+		it("should not timeout", function (done) {
+			var f = ff(function () {
+				f.timeout(200);
+				setTimeout(f(), 10);
+			}).error(function (e) {
+				assert.fail();
+			}).success(function() {
+				done();
+			});
+		});
+	});
+
 	describe("#succeed()", function () {
 		it("should work", function (done) {
 			ff(function () {

@@ -159,6 +159,12 @@ current step returns. No other steps will be executed afterward.
 You can add additional steps after calling `ff()` using `f.next(fn)`.
 Internally, we pass the arguments through this function initially.
 
+#### `f.timeout(milliseconds)`
+
+Set a timeout; if the `ff` chain of steps do not finish after this
+many milliseconds, fail with a timeout Error. Works with both deferred
+and normal `ff` steps.
+
 ## Finally, remember to handle the result! (`.cb`, `.error`, `.success`)
 
 After you've called `ff()` with your steps, you'll want to handle the
@@ -338,6 +344,7 @@ var f = ff(context, function () {
 	// Aborting the chain of steps early:
 	f.succeed(result1, ...); // after this function, skip the other steps
 	f.fail(err);             // after this function, fail with this error
+	f.timeout(200);			 // abort if it doesn't finish before 200 milliseconds
 }, function (arg1, arg2, file1, allFiles, file3Exists, multi1, multi2) {
 	// Do something amazing here!
 }).cb(cb); // <-- usually you'll have someone else handle a (err, result...) callback
@@ -360,6 +367,8 @@ f.cb(function (err, args...) { }); // triggered on both success and error
 // Trigger results: 
 f(arg1, ...); // success
 f.fail(err);  // failure
+// Add a timeout (which would result in a failure with a timeout Error
+f.timeout(milliseconds);
 // Get the result synchronously, if available (the error argument is on f.result[0])
 var resultArray = f.result
 ```

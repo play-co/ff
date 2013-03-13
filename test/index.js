@@ -1,5 +1,8 @@
-var assert = require("assert");
-var ff = require("../lib/ff");
+if (typeof module !== "undefined") {
+	var ff = require("../lib/ff");
+	var chai = require("chai");
+}
+var assert = chai.assert;
 
 describe("ff", function () {
 
@@ -142,19 +145,26 @@ describe("ff", function () {
 
 	describe("#exceptions()", function () {
 		it("should be propagated", function (done) {
-			function caught () {
-				process.listeners('uncaughtException').push(originalListener);
-				done();
+			// in node we register with an unhandled exception in the process object
+			// in the browser we user the window.onerror method to handle uncaught errors
+			if (typeof module !== "undefined") {
+				function caught () {
+					process.listeners('uncaughtException').push(originalListener);
+					done();
+				}
+				var originalListener = process.listeners('uncaughtException').pop();
+				process.once('uncaughtException', caught);
+			} else {
+				window.onerror = function () {
+					done();
+				}
 			}
-			var originalListener = process.listeners('uncaughtException').pop();
-			process.once('uncaughtException', caught);
  			ff(function () {
 				throw 4;
 			}, function () {
 			});
 		});
 	});
-
 });
 
 describe("ff, with context", function () {
@@ -319,5 +329,19 @@ describe("ff, new-style", function () {
 				done();
 			});
 		});
+	});
+});
+
+describe("Misc", function () {
+	it("should not pollute global namespace", function (done) {
+		if (typeof copyToFunction !== "undefined" 
+			|| typeof Group !== "undefined"
+			|| typeof SuperGroup !== "undefined"
+			|| typeof DoneError !== "undefined"
+		) {
+			done("global namespace polluted");
+		} else {
+			done();
+		}
 	});
 });

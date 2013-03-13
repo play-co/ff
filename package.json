@@ -12,6 +12,7 @@
 		"url" : "http://github.com/gameclosure/ff.git"
 	},
 	"devDependencies": {
+		"chai": "*",
 		"mocha": "~1.3.0"
 	},
 	"scripts": {

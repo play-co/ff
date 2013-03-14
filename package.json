@@ -16,7 +16,7 @@
 		"mocha": "~1.3.0"
 	},
 	"scripts": {
-		"test": "mocha -R spec -t 5000"
+		"test": "mocha -R spec -t 5000 -s 1000"
 	},
 	"main": "lib/ff"
 }

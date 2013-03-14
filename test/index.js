@@ -304,6 +304,20 @@ describe("ff, defer", function () {
 	});
 });
 
+describe("ff, promises A+", function () {
+	if (typeof module !== "undefined") {
+		var adaptor = require("./promise-adaptor");
+		var promisesTest = require("promises-aplus-tests");
+	}
+
+	it("should pass the a+ test suite", function (done) {
+		promisesTest(adaptor, function (err) {
+			assert(!err);
+			done();
+		})
+	});
+});
+
 describe("misc", function () {
 	it("should not pollute global namespace", function (done) {
 		if (typeof copyToFunction !== "undefined" 

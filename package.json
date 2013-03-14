@@ -13,7 +13,8 @@
 	},
 	"devDependencies": {
 		"chai": "*",
-		"mocha": "~1.3.0"
+		"mocha": "*",
+		"promises-aplus-tests": "*"
 	},
 	"scripts": {
 		"test": "mocha -R spec -t 5000 -s 1000"

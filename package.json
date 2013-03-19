@@ -17,7 +17,7 @@
 		"promises-aplus-tests": "*"
 	},
 	"scripts": {
-		"test": "mocha -R spec -t 5000 -s 1000"
+		"test": "mocha -R spec -t 5000 -s 1000 && promises-aplus-tests test/promise-adapter.js"
 	},
 	"main": "lib/ff"
 }

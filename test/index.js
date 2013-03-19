@@ -31,7 +31,7 @@ describe("ff", function () {
 
 				setTimeout(function () {
 					two(null, 2);
-				}, 200)
+				}, 200);
 			}, function (one, two) {
 				assert.equal(one, 1);
 				assert.equal(two, 2);
@@ -257,7 +257,8 @@ describe("ff, defer", function () {
 	it("should retroactively succeed", function (done) {
 		var f = ff.defer(this);
 		f("ok");
-		f.onSuccess(function() {
+		f.onSuccess(function(value) {
+			assert.equal(value, "ok");
 			done();
 		});
 	});
@@ -265,7 +266,8 @@ describe("ff, defer", function () {
 	it("should retroactively fail", function (done) {
 		var f = ff.defer(this);
 		f.fail(4);
-		f.onError(function(n) {
+		f.onError(function(e) {
+			assert.equal(e, 4);
 			done();
 		});
 	});
@@ -301,20 +303,6 @@ describe("ff, defer", function () {
 			assert(n == 1);
 			done();
 		});
-	});
-});
-
-describe("ff, promises A+", function () {
-	if (typeof module !== "undefined") {
-		var adaptor = require("./promise-adaptor");
-		var promisesTest = require("promises-aplus-tests");
-	}
-
-	it("should pass the a+ test suite", function (done) {
-		promisesTest(adaptor, function (err) {
-			assert(!err);
-			done();
-		})
 	});
 });
 

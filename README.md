@@ -31,15 +31,18 @@ var f = ff(this, function () {
 }).cb(cb);
 ```
 
-It also supports promises, using the `ff.defer` function [[docs]](#promise-api-deferreds):
+It is also [Promises/A+](http://promises-aplus.github.com/promises-spec/) compliant. For more information about using promises, see [below](#promise-api-deferreds).
 
 ```javascript
-var f = ff.defer(this);
+var f = ff(this, function () {
+	fs.readFile("1.txt", f());
+});
 
-f.onSuccess(function(result, result2) { });
-f.onError(function (err) { });
-
-f(result, result2); // or f.fail(err);
+f.then(function onFulfilled(data) {
+	// do something will text file data
+}, function onRejected(err) {
+	// handle file read error
+});
 ```
 
 A typical Express web handler looks like this. (Note that even if an
@@ -269,18 +272,17 @@ step, it gets passed down, skipping over any `.next` handlers.
 
 # Promise API (Deferreds)
 
-Because of the implementation details we just described, `ff` doubles
-as a simple promise library using a very similar API. All you need to
-remember is to call `ff.defer()` instead of `ff()`.
+Because of the implementation details we just described, `ff` can also be
+used as a promise library. If you are intersted in managing your own promises,
+you can use the `defer` helper.
 
 ```javascript
 var f = ff.defer(this);
 
 // set callbacks:
-f.onSuccess(function(result, result2) { });
-f.onError(function (err) { });
+f.then(function (result, restul2) { }, function (err) { });
 
-// now trigger the result:
+// now trigger the result (or rejection)
 f(result, result2); // or f.fail(err);
 ```
 

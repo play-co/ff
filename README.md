@@ -31,19 +31,22 @@ var f = ff(this, function () {
 }).cb(cb);
 ```
 
-It also supports promises, using the `ff.defer` function [[docs]](#promise-api-deferreds):
+It is also [Promises/A+](http://promises-aplus.github.com/promises-spec/) compliant. For more information about using promises, see [below](#promise-api-deferreds).
 
 ```javascript
-var f = ff.defer(this);
+var f = ff(this, function () {
+	fs.readFile("1.txt", f());
+});
 
-f.success(function(result, result2) { });
-f.error(function (err) { });
-
-f(result, result2); // or f.fail(err);
+f.then(function onFulfilled(data) {
+	// do something will text file data
+}, function onRejected(err) {
+	// handle file read error
+});
 ```
 
 A typical Express web handler looks like this. (Note that even if an
-exception gets thrown during one of these handlers, the .error()
+exception gets thrown during one of these handlers, the .onError()
 handler will be called.
 
 ```javascript
@@ -55,7 +58,7 @@ function (req, res, next) {
         user.getFriends(f());
     }, function (user, friends) {
         res.json({ user: user, friends: friends });
-    }).error(next); // call next() *only* on error
+    }).onError(next); // call next() *only* on error
 }
 ```
 
@@ -143,7 +146,7 @@ an array*. (See the Groups example.)
 #### `f.succeed(successArgs...)`
 
 This causes the chain of steps to end successfully (after you return
-from the current function). The result handlers (`.success()` and
+from the current function). The result handlers (`.onSuccess()` and
 `.cb()`) will be called as soon as the current step returns. No other
 steps will be executed afterward.
 
@@ -151,7 +154,7 @@ steps will be executed afterward.
 
 This causes the chain of steps to end as though the given error had
 occurred (after you return from the current function). The result
-handlers (`.error()` and `.cb()`) will be called as soon as the
+handlers (`.onError()` and `.cb()`) will be called as soon as the
 current step returns. No other steps will be executed afterward.
 
 #### `f.next(fn)`
@@ -165,7 +168,7 @@ Set a timeout; if the `ff` chain of steps do not finish after this
 many milliseconds, fail with a timeout Error. Works with both deferred
 and normal `ff` steps.
 
-## Finally, remember to handle the result! (`.cb`, `.error`, `.success`)
+## Finally, remember to handle the result! (`.cb`, `.onError`, `.onSuccess`)
 
 After you've called `ff()` with your steps, you'll want to handle the
 final result that gets passed down the end of the function. We often
@@ -192,16 +195,16 @@ A `.cb()` result handler will *always* be called, whether or not an
 error occurred. An error object will be passed first (null if there
 was no error.)
 
-#### `f.success( function (results...) {} )`
+#### `f.onSuccess( function (results...) {} )`
 
-A `.success()` handler will *only* be called if no error occured.
+A `.onSuccess()` handler will *only* be called if no error occured.
 Additionally, an error object will *not* be passed. Only results.
 
-#### `f.error( function (err) {} )`
+#### `f.onError( function (err) {} )`
 
-A `.error()` result handler will *only* be called if an error occured.
+A `.onError()` result handler will *only* be called if an error occured.
 In this case, `err` will never be null. (If you're using Express,
-often we use `.error(next)` to propagate whenever we didn't reach a
+often we use `.onError(next)` to propagate whenever we didn't reach a
 call to `res.send()`.)
 
 **Always remember to add one of these result handlers after your
@@ -213,7 +216,7 @@ handlers and they will all be called simultaneously.
 If any function throws an exception, or an error gets passed to one of
 the callbacks (as in `callback(err, result)`), the error will be
 propagated immediately to your result handlers (`.cb()` and
-`.error()`). If a result handler throws an exception, that exception
+`.onError()`). If a result handler throws an exception, that exception
 will bubble up into Node's `unhandledException` handler or the
 browser's developer console.
 
@@ -269,18 +272,17 @@ step, it gets passed down, skipping over any `.next` handlers.
 
 # Promise API (Deferreds)
 
-Because of the implementation details we just described, `ff` doubles
-as a simple promise library using a very similar API. All you need to
-remember is to call `ff.defer()` instead of `ff()`.
+Because of the implementation details we just described, `ff` can also be
+used as a promise library. If you are intersted in managing your own promises,
+you can use the `defer` helper.
 
 ```javascript
 var f = ff.defer(this);
 
 // set callbacks:
-f.success(function(result, result2) { });
-f.error(function (err) { });
+f.then(function (result, restul2) { }, function (err) { });
 
-// now trigger the result:
+// now trigger the result (or rejection)
 f(result, result2); // or f.fail(err);
 ```
 
@@ -291,8 +293,8 @@ f(arg1, arg2...) // success
 f.fail(err)      // failure
 ```
 
-Just like with a regular `ff` call, you can attach `.success()`,
-`.error()`, and `.cb()` handlers. 
+Just like with a regular `ff` call, you can attach `.onSuccess()`,
+`.onError()`, and `.cb()` handlers. 
 
 You can also pass functions into the `ff.defer(...)` call, just like
 regular `ff`:
@@ -308,8 +310,8 @@ var f = ff.defer(function(result, text) {
 f(result, "something else");
 ```
 
-Once your chain has succeeded or failed, future `.success()` and
-`.error()` handlers will remember the result and fire immediately. The
+Once your chain has succeeded or failed, future `.onSuccess()` and
+`.onError()` handlers will remember the result and fire immediately. The
 result is stored on `f.result` once available.
 
 ---
@@ -351,8 +353,8 @@ var f = ff(context, function () {
 
 // Don't forget result handlers (often chained to `ff` for conciseness)
 f.cb(function (err, args...) { }); // triggered on both success and error
-f.success(function (args...) { }); // only on success
-f.error(function (err) { });       // only on error
+f.onSuccess(function (args...) { }); // only on success
+f.onError(function (err) { });       // only on error
 ```
 
 #### Promise API Summary
@@ -361,8 +363,8 @@ f.error(function (err) { });       // only on error
 // Create a deferred
 var f = ff.defer(context);
 // Add result handlers:
-f.success(function (args...) { });
-f.error(function (err) { });
+f.onSuccess(function (args...) { });
+f.onError(function (err) { });
 f.cb(function (err, args...) { }); // triggered on both success and error
 // Trigger results: 
 f(arg1, ...); // success

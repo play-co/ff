@@ -3,13 +3,13 @@
 ***ff* simplifies the most common use cases for series, parallel, and
 promise utilities.** 
 
-#### Installation
+# Installation
 
 	$ npm install ff
 
 In the browser, simply add a script tag pointing to `lib/ff.js` in your HTML page.
 
-## Table of Contents
+### Table of Contents
 
 - [Quick Start](#quick-start)
 - **[API Documentation](#api-documentation)**
@@ -17,35 +17,42 @@ In the browser, simply add a script tag pointing to `lib/ff.js` in your HTML pag
 - [Promise API](#promise-api-deferreds)
 - **[Quick Reference & Cheat Sheet](#quick-reference--cheat-sheet)**
 
-## Quick Start
+# Quick Start
 
-`ff()` accepts a list of functions to be run in sequential order, and returns an object that can be used to manage the flow of data between these functions. You may also pass in an object as the first parameter, which `ff` will bind to all function calls.
+`ff()` accepts a list of functions to be run in sequential order, and returns an object 
+that can be used to manage the flow of data between these functions. You may also pass in a 
+context object as the first parameter, which FF will bind to all function calls.
 
 ```javascript
 var ff = require("ff");
 
-var f = ff(this, function () {
-    fs.readFile("1.txt", f.slot());
-    fs.readFile("2.txt", f.slot());
-}, function (fileA, fileB) {
-    this.concatFiles(fileA, fileB, f.slot());
-}, function (result) {
-    f.pass(result.toUpperCase());
-}).cb(nextFn);
+var f = ff(this,
+	function () {
+		fs.readFile("1.txt", f.slot());
+		fs.readFile("2.txt", f.slot());
+	},
+	function (fileA, fileB) {
+		this.sortFileContents(fileA, fileB, f.slot());
+	},
+	function (result) {
+		f.pass(result.toUpperCase());
+	}
+).cb(nextFn);
 ```
 
 FF is also [Promises/A+](http://promises-aplus.github.com/promises-spec/) compliant. For more information about using FF promises, see [below](#promise-api-deferreds).
 
 ```javascript
-var f = ff(this, function () {
-	fs.readFile("1.txt", f.slot());
-});
+var f = ff(this,
+	function () {
+		fs.readFile("1.txt", f.slot());
+	}
+);
 
-f.then(function onFulfilled(data) {
-	// do something will text file data
-}, function onRejected(err) {
-	// handle file read error
-});
+f.then(
+	function onFulfilled(data) { }, 
+	function onRejected(err) { }
+);
 ```
 
 A typical Express web handler looks like this. (Note that even if an
@@ -54,14 +61,18 @@ handler will be called.
 
 ```javascript
 function (req, res, next) {
-    var f = ff(function() {
-        authenticateUser(req, f.slot());
-    }, function (user) {
-        f.pass(user); // pass the user along synchronously
-        user.getFriends(f.slot());
-    }, function (user, friends) {
-        res.json({ user: user, friends: friends });
-    }).onError(next); // call next() *only* on error
+	var f = ff(
+		function() {
+			authenticateUser(req, f.slot());
+		},
+		function (user) {
+			f.pass(user); // pass the user along synchronously
+			user.getFriends(f.slot());
+		},
+		function (user, friends) {
+			res.json({ user: user, friends: friends });
+		}
+	).onError(next); // call next() *only* on error
 }
 ```
 
@@ -69,32 +80,34 @@ function (req, res, next) {
 
 # API Documentation
 
-## First, call `ff` and save its return value (as `f`, perhaps).
+### First, call `ff` and save its return value (as `f`, perhaps).
 
-#### `var f = ff([context], stepFunctions, ... )`
-    
-The ``ff`` function takes a context and any number of
+```javascript
+var f = ff([context], stepFunctions, ... )
+```
+
+The `ff()` function takes a context and any number of
 functions, which we call "steps". Each step is run one at a time. Use
 `ff`'s return value (often called `f`) to manage the flow of data between 
 functions.
 
-## Second, use the returned `f` object inside each step function.
+### Second, use the returned `f` object inside each step function.
 
-**Within your step functions, pass `f.slot()` as the callback parameter to
-any async function.** This reserves a "slot" in the next step's
+Within your step functions, pass `f.slot()` as the callback parameter to
+any async function. This reserves a "slot" in the next step's
 function arguments. For instance:
 
 ```javascript
-	fs.readFile("1.txt", f.slot()); // the file contents will be passed to the next function
+fs.readFile("1.txt", f.slot()); // the file contents will be passed to the next function
 ```
 
 Most often, that's all you'll need, but there are other ways to leverage 
 FF to handle the flow of data.
 
 ```javascript
-	f.pass(data); // pass data synchronously to the next function
-	fs.exists("1.txt", f.slotPlain()); // fs.exists doesn't pass (err, result), just (result)
-	emitter.once("close", f.wait()); // just wait for the "close" event, don't pass any data
+f.pass(data); // pass data synchronously to the next function
+fs.exists("1.txt", f.slotPlain()); // fs.exists doesn't pass (err, result), just (result)
+emitter.once("close", f.wait()); // just wait for the "close" event, don't pass any data
 ```
 
 ### All Methods on `f`:
@@ -171,7 +184,7 @@ Set a timeout; if the `ff` chain of steps do not finish after this
 many milliseconds, fail with a timeout Error. Works with both deferred
 and normal `ff` steps.
 
-## Finally, remember to handle the result! (`.cb`, `.onError`, `.onSuccess`)
+### Finally, remember to handle the result! (`.cb`, `.onError`, `.onSuccess`)
 
 After you've called `ff()` with your steps, you'll want to handle the
 final result that gets passed down the end of the function. We often
@@ -184,12 +197,10 @@ var f = ff(
 ```
 
 That final callback will be passed arguments node-style: `cb(err,
-results...)`. (The number of arguments after `err` depends on how many
-slots you've passed from the last function in the chain.) This lets
-you use ff within any part of your code without expecting any other
-function to know that `ff` exists in your own code.
+results...)`. The number of arguments after `err` depends on how many
+slots you passed from the last function in the chain.
 
-There are three ways you can handle the final result (you can mix and
+There are three ways you can handle the final result (and you can mix and
 match):
 
 #### `f.cb( function (err, results...) { } )`
@@ -212,7 +223,7 @@ call to `res.send()`.)
 
 **Always remember to add one of these result handlers after your
 `ff()` call, so that errors propagate!** You can add multiple result
-handlers and they will all be called simultaneously. 
+handlers and they will each be called in the order in which they were registered.
 
 ### Error Handling
 
@@ -237,17 +248,20 @@ array*. This is useful for processing arrays of items. Here's an example:
 ```javascript
 var allMyFiles = ["one.txt", "two.txt", "three.txt"];
 
-var f = ff(function() {
-    var group = f.group();
-    allMyFiles.forEach(function (file) {
-        fs.readFile(file, group());
-    });
-}, function (allFiles) {
-    // allFiles is an array of 3 items (the contents of each file).
-    
-    // If any call had returned an err, this function would not be
-    // called, and the error would have been passed down to `cb`.
-}).cb(nextFn);
+var f = ff(
+	function () {
+		var group = f.group();
+		allMyFiles.forEach(function (file) {
+			fs.readFile(file, group());
+		});
+	},
+	function (allFiles) {
+		// allFiles is an array of 3 items (the contents of each file).
+
+		// If any call had returned an err, this function would not be
+		// called, and the error would have been passed down to `cb`.
+	}
+).cb(nextFn);
 ```
 
 ### Implementation Details
@@ -298,17 +312,20 @@ f(arg1, arg2...) // success
 f.fail(err)      // failure
 ```
 
-In addition to using `then` to attach handlers, you can also use the regular 
-ff `.onSuccess()`, `.onError()`, and `.cb()` to attach completion handlers. 
+In addition to using `then` to attach completion handlers, you can also use the regular 
+ff `.onSuccess()`, `.onError()`, and `.cb()` to do so.
 
 And just like regular `ff`, you can pass functions into `ff.defer(...)`:
 
 ```javascript
-var f = ff.defer(function(result, text) {
-	// do something with result
-}, function () {
-	// ...etc...
-});
+var f = ff.defer(
+	function(result, text) {
+		// do something with result
+	},
+	function () {
+		// ...etc...
+	}
+);
 
 f.then(
 	function onFulfilled(results) { },
@@ -330,35 +347,41 @@ The [API Documentation](#api-documentation) provides a much more thorough tutori
 
 ```javascript
 // Create a chain of steps with the `ff` function:
-var f = ff(context, function () {
-	// Within each method, use the `f` object.
-	// Most common uses:
-	f(arg1, arg2); // pass multiple arguments synchronously
-	fs.readFile("file1.txt", f());      // use f() for async callbacks
-	fs.readFile("file2.txt", f.wait()); // just wait for the result
-                                        // without putting it in args
-									 
-	// To process arrays, use groups:
-	var group = f.group();
-	allFiles.forEach(function (item) {   // use any `f` function on arrays
-	    fs.readFile(item, group.slot()); // and the result gets stored as
-	});                                  // an array in the next step
-	
-	// Less common uses for atypical functions
-	fs.exists("file3.txt", f.slotPlain()); // fs.exists doesn't pass an error
-	fs.exists("file4.txt", f.waitPlain()); // ditto, and I don't care if it fails
-	var cb = f.slotMulti(2); // slot and pass two arguments to the next function
-	                         // for example, cb(null, 1, 2);
-	
-	// Aborting the chain of steps early:
-	f.succeed(result1, ...); // after this function, skip the other steps
-	f.fail(err);             // after this function, fail with this error
-	f.timeout(200);			 // abort if it doesn't finish before 200 milliseconds
-}, function (arg1, arg2, file1, allFiles, file3Exists, multi1, multi2) {
-	// Do something amazing here!
-}).cb(nextFn); // <-- usually you'll have someone else handle a (err, result...) callback
+var f = ff(context, 
+	function () {
+		// Within each method, use the `f` object.
+		// Most common uses:
+		f(arg1, arg2); // pass multiple arguments synchronously
+		fs.readFile("file1.txt", f());      // use f() for async callbacks
+		fs.readFile("file2.txt", f.wait()); // just wait for the result
+	                                        // without putting it in args
+										 
+		// To process arrays, use groups:
+		var group = f.group();
+		allFiles.forEach(function (item) {   // use any `f` function on arrays
+		    fs.readFile(item, group.slot()); // and the result gets stored as
+		});                                  // an array in the next step
+		
+		// Less common uses for atypical functions
+		fs.exists("file3.txt", f.slotPlain()); // fs.exists doesn't pass an error
+		fs.exists("file4.txt", f.waitPlain()); // ditto, and I don't care if it fails
+		var cb = f.slotMulti(2); // slot and pass two arguments to the next function
+		                         // for example, cb(null, 1, 2);
+		
+		// Aborting the chain of steps early:
+		f.succeed(result1, ...); // after this function, skip the other steps
+		f.fail(err);             // after this function, fail with this error
+		f.timeout(200);			 // abort if it doesn't finish before 200 milliseconds
+	},
+	function (arg1, arg2, file1, allFiles, file3Exists, multi1, multi2) {
+		// Do something amazing here!
+	}
+).cb(nextFn); // <-- usually you'll have someone else handle a (err, result...) callback
 
-// Don't forget result handlers (often chained to `ff` for conciseness)
+// Add a timeout (which would result in a failure with a timeout Error
+f.timeout(milliseconds);
+
+// Don't forget all the result handler options (attach as many as you like!)
 f.cb(function (err, args...) { }); // triggered on both success and error
 f.onSuccess(function (args...) { }); // only on success
 f.onError(function (err) { });       // only on error
@@ -369,6 +392,7 @@ f.onError(function (err) { });       // only on error
 ```javascript
 // Create a deferred
 var f = ff.defer();
+
 // Add result handlers:
 f.then(
 	function onFulfilled(arg1, ...) { },
@@ -378,8 +402,6 @@ f.then(
 // Trigger results: 
 f(arg1, ...); // fulfill
 f.fail(err);  // reject
-// Add a timeout (which would result in a failure with a timeout Error
-f.timeout(milliseconds);
 ```
 
 ---

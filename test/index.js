@@ -147,7 +147,7 @@ describe("ff", function () {
 				}
 			}, function () {
 				assert.fail();
-			}).cb(function(err, two) {
+			}).onComplete(function(err, two) {
 				assert(err == 4 && !two);
 				done();
 			});
@@ -281,7 +281,7 @@ describe("ff, defer", function () {
 		}, function (x) {
 			assert(x == 2);
 			n++;
-		}).cb(function(e) {
+		}).onComplete(function(e) {
 			if (e) throw e;
 			assert(n == 2);
 			done();

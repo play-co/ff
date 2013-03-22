@@ -37,7 +37,7 @@ var f = ff(this,
 	function (result) {
 		f.pass(result.toUpperCase());
 	}
-).cb(nextFn);
+).onComplete(nextFn);
 ```
 
 FF is also [Promises/A+](http://promises-aplus.github.com/promises-spec/) compliant. For more information about using FF promises, see [below](#promise-api-deferreds).
@@ -163,14 +163,14 @@ an array*. (See the [Groups example](#advanced-usage).)
 
 This causes the chain of steps to end successfully (after you return
 from the current function). The result handlers (`.onSuccess()` and
-`.cb()`) will be called as soon as the current step returns. No other
+`.onComplete()`) will be called as soon as the current step returns. No other
 steps will be executed afterward.
 
 #### `f.fail(err)`
 
 This causes the chain of steps to end as though the given error had
 occurred (after you return from the current function). The result
-handlers (`.onError()` and `.cb()`) will be called as soon as the
+handlers (`.onError()` and `.onComplete()`) will be called as soon as the
 current step returns. No other steps will be executed afterward.
 
 #### `f.next(fn)`
@@ -184,7 +184,7 @@ Set a timeout; if the `ff` chain of steps do not finish after this
 many milliseconds, fail with a timeout Error. Works with both deferred
 and normal `ff` steps.
 
-### Finally, remember to handle the result! (`.cb`, `.onError`, `.onSuccess`)
+### Finally, remember to handle the result! (`.onComplete`, `.onError`, `.onSuccess`)
 
 After you've called `ff()` with your steps, you'll want to handle the
 final result that gets passed down the end of the function. We often
@@ -193,19 +193,19 @@ do this like so:
 ```javascript
 var f = ff(
    // steps here...
-).cb(resultHandler);
+).onComplete(resultHandler);
 ```
 
-That final callback will be passed arguments node-style: `cb(err,
+That final callback will be passed arguments node-style: `onComplete(err,
 results...)`. The number of arguments after `err` depends on how many
 slots you passed from the last function in the chain.
 
 There are three ways you can handle the final result (and you can mix and
 match):
 
-#### `f.cb( function (err, results...) { } )`
+#### `f.onComplete( function (err, results...) { } )`
 
-A `.cb()` result handler will *always* be called, whether or not an
+A `.onComplete()` result handler will *always* be called, whether or not an
 error occurred. An error object will be passed first (null if there
 was no error.)
 
@@ -229,7 +229,7 @@ handlers and they will each be called in the order in which they were registered
 
 If any function throws an exception, or an error gets passed to one of
 the callbacks (as in `callback(err, result)`), the error will be
-propagated immediately to your result handlers (`.cb()` and
+propagated immediately to your result handlers (`.onComplete()` and
 `.onError()`). If a result handler throws an exception, that exception
 will bubble up into Node's `unhandledException` handler or the
 browser's developer console.
@@ -259,9 +259,9 @@ var f = ff(
 		// allFiles is an array of 3 items (the contents of each file).
 
 		// If any call had returned an err, this function would not be
-		// called, and the error would have been passed down to `cb`.
+		// called, and the error would have been passed down to `onComplete`.
 	}
-).cb(nextFn);
+).onComplete(nextFn);
 ```
 
 ### Implementation Details
@@ -272,18 +272,18 @@ The following are equivalent:
 var f = ff(this,
 	one,
 	two,
-).cb(three);
+).onComplete(three);
 ```
 
 ```javascript
 var f = ff(this);
 f.next(one);
 f.next(two);
-f.cb(three);
+f.onComplete(three);
 ```
 
 Error handling is actually quite simple: If an error occurs in any
-step, it gets passed down to the `cb` or `onError` handler, skipping over any `.next` handlers.
+step, it gets passed down to the `onComplete` or `onError` handler, skipping over any `.next` handlers.
 
 ---
 
@@ -313,7 +313,7 @@ f.fail(err)      // failure
 ```
 
 In addition to using `then` to attach completion handlers, you can also use the regular 
-ff `.onSuccess()`, `.onError()`, and `.cb()` to do so.
+ff `.onSuccess()`, `.onError()`, and `.onComplete()` to do so.
 
 And just like regular `ff`, you can pass functions into `ff.defer(...)`:
 
@@ -376,13 +376,13 @@ var f = ff(context,
 	function (arg1, arg2, file1, allFiles, file3Exists, multi1, multi2) {
 		// Do something amazing here!
 	}
-).cb(nextFn); // <-- usually you'll have someone else handle a (err, result...) callback
+).onComplete(nextFn); // <-- usually you'll have someone else handle a (err, result...) callback
 
 // Add a timeout (which would result in a failure with a timeout Error
 f.timeout(milliseconds);
 
 // Don't forget all the result handler options (attach as many as you like!)
-f.cb(function (err, args...) { }); // triggered on both success and error
+f.onComplete(function (err, args...) { }); // triggered on both success and error
 f.onSuccess(function (args...) { }); // only on success
 f.onError(function (err) { });       // only on error
 ```

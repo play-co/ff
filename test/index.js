@@ -6,11 +6,11 @@ var assert = chai.assert;
 
 describe("ff", function () {
 
-	describe("#slot() as pass", function () {
+	describe("#pass()", function () {
 		it("should pass a reference to the next step", function (done) {
 			var f = ff(function () {
 				var foo = { bar: false };
-				f.slot(foo);
+				f.pass(foo);
 				foo.bar = true;
 			}, function (foo) {
 				assert(foo);
@@ -19,7 +19,7 @@ describe("ff", function () {
 		});
 	});
 
-	describe("#slot() as callback", function () {
+	describe("#slot()", function () {
 		it("should pass values to the next function in slotted order", function (done) {
 			var f = ff(function () {
 				var one = f.slot();

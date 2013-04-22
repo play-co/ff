@@ -39,6 +39,33 @@ describe("ff", function () {
 		});
 	});
 
+
+	describe("#group()", function () {
+		it("should pass on array of call results in correct order", function (done) {
+			var f = ff(function () {
+				var group = f.group();
+				var one = group();
+				var two = group();
+				var three = group();
+
+				two(null, 2); // notice order
+				one(null, 1);
+				three(null, 3);
+			}, function (groupResult) {
+				assert.deepEqual(groupResult, [1, 2, 3]);
+				done();
+			})
+		});
+		it("should pass on empty array if not called", function (done) {
+			var f = ff(function () {
+				f.group();
+			}, function (groupResult) {
+				assert.deepEqual(groupResult, []);
+				done();
+			})
+		});
+	});
+
 	describe("#onError()", function () {
 		it("should forward errors to the error callback", function (done) {
 			var f = ff(function () {

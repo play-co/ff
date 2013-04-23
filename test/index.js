@@ -184,7 +184,7 @@ describe("ff", function () {
 	describe("#exceptions()", function () {
 		it("should be propagated", function (done) {
 			function handleError(err) {
-				if (err === "handle this error") {
+				if (err && err.message === "handle this error") {
 					done();
 				} else {
 					assert.fail();
@@ -194,20 +194,27 @@ describe("ff", function () {
 			// in node we register with an unhandled exception in the process object
 			// in the browser we user the window.onerror method to handle uncaught errors
 			if (typeof module !== "undefined") {
-				var originalListener = process.listeners('uncaughtException').pop();
+				var originalListeners = [];
+				while (process.listeners('uncaughtException').length > 0) {
+					var listener = process.listeners('uncaughtException').pop();
+					process.removeListener('uncaughtException', listener);
+					originalListeners.push(listener);
+				}
 				process.once('uncaughtException', function () {
-					process.listeners('uncaughtException').push(originalListener);
+					while (originalListeners.length > 0) {
+						process.on('uncaughtException', originalListeners.pop());
+					}
 					handleError.apply(null, Array.prototype.slice.call(arguments));
 				});
 			} else {
 				window.onerror = function () {
 					// window.onerror does not propogate the original thrown excpetion
 					// so manually pass in our expected error value
-					handleError("handle this error");
+					handleError(new Error("handle this error"));
 				};
 			}
  			ff(function () {
-				throw "handle this error";
+				throw new Error("handle this error");
 			}, function () {
 				assert.fail();
 			});

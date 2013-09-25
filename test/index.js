@@ -219,6 +219,28 @@ describe("ff", function () {
 				assert.fail();
 			});
 		});
+		
+		it("should catch everything", function (done) {
+			var f = ff(function () {
+				ff(function () {
+					throw "oops";
+				}).onComplete(f.slot());
+				
+				ff(function () {
+					throw new Error("oops");
+				}).onComplete(f.slot());
+				
+				ff(function () {
+					oops;
+				}).onComplete(f.slot());
+				
+				ff(function () {
+					JSON.parse("oops");
+				}).onComplete(f.slot());
+			}).onComplete(function () {
+				done();
+			});
+		});
 	});
 });
 

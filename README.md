@@ -129,7 +129,7 @@ directly to the next function synchronously.
 
 Sometimes you don't want to pass any arguments to the next function,
 but you just want to wait until an async call completes successfully.
-This behaves exactly like `f.slow()`, handling errors, but no data is 
+This behaves exactly like `f.slot()`, handling errors, but no data is
 passed to the next step.
 
 #### `f.slotPlain()`

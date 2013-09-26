@@ -1,11 +1,12 @@
 {
 	"name": "ff",
-	"version": "0.1.4",
+	"version": "0.2.0",
 	"description": "Concise, Powerful Asynchronous Flow Control in JavaScript",
 	"engine": [ "node >=0.2.0" ],
 	"author": "Marcus Cavanaugh <m@mcav.com>",
 	"contributors": [
-		"Michael Henretty <michael.henretty@gmail.com>"
+		"Michael Henretty <michael.henretty@gmail.com>",
+		"Teddy Cross <tkazec@gmail.com>"
 	],
 	"repository": {
 		"type" : "git",

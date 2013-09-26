@@ -219,6 +219,34 @@ describe("ff", function () {
 				assert.fail();
 			});
 		});
+		
+		it("should catch everything", function (done) {
+			var f = ff(function () {
+				ff(function () {
+					throw "oops";
+				}).onComplete(f.slotPlain());
+				
+				ff(function () {
+					throw new Error("oops");
+				}).onComplete(f.slotPlain());
+				
+				ff(function () {
+					oops;
+				}).onComplete(f.slotPlain());
+				
+				ff(function () {
+					JSON.parse("oops");
+				}).onComplete(f.slotPlain());
+			}).onComplete(function (err, string, error, referenceerror, syntaxerror) {
+				assert.isNull(err);
+				assert.typeOf(string, "string");
+				assert.instanceOf(error, Error);
+				assert.instanceOf(referenceerror, ReferenceError);
+				assert.instanceOf(syntaxerror, SyntaxError);
+				
+				done();
+			});
+		});
 	});
 });
 

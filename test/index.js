@@ -224,20 +224,26 @@ describe("ff", function () {
 			var f = ff(function () {
 				ff(function () {
 					throw "oops";
-				}).onComplete(f.slot());
+				}).onComplete(f.slotPlain());
 				
 				ff(function () {
 					throw new Error("oops");
-				}).onComplete(f.slot());
+				}).onComplete(f.slotPlain());
 				
 				ff(function () {
 					oops;
-				}).onComplete(f.slot());
+				}).onComplete(f.slotPlain());
 				
 				ff(function () {
 					JSON.parse("oops");
-				}).onComplete(f.slot());
-			}).onComplete(function () {
+				}).onComplete(f.slotPlain());
+			}).onComplete(function (err, string, error, referenceerror, syntaxerror) {
+				assert.isNull(err);
+				assert.typeOf(string, "string");
+				assert.instanceOf(error, Error);
+				assert.instanceOf(referenceerror, ReferenceError);
+				assert.instanceOf(syntaxerror, SyntaxError);
+				
 				done();
 			});
 		});

@@ -1,24 +1,27 @@
 {
 	"name": "ff",
 	"version": "0.2.0",
-	"description": "Concise, Powerful Asynchronous Flow Control in JavaScript",
-	"engine": [ "node >=0.2.0" ],
-	"author": "Marcus Cavanaugh <m@mcav.com>",
+	"description": "Concise, Powerful Asynchronous Flow Control in JavaScript.",
+	"keywords": ["async", "flow control"],
+	"homepage": "https://github.com/gameclosure/ff",
+	"bugs": "https://github.com/gameclosure/ff/issues",
+	"license": "MIT",
+	"author": "Marcus Cavanaugh <m@mcav.com> (http://mcav.com)",
 	"contributors": [
 		"Michael Henretty <michael.henretty@gmail.com>",
-		"Teddy Cross <tkazec@gmail.com>"
+		"Teddy Cross <teddy@tkaz.ec> (http://tkaz.ec)"
 	],
-	"repository": {
-		"type" : "git",
-		"url" : "http://github.com/gameclosure/ff.git"
+	"main": "lib/ff",
+	"repository": "git://github.com/gameclosure/ff",
+	"scripts": {
+		"test": "mocha -R spec -t 5000 -s 1000 && promises-aplus-tests test/promise-adapter.js"
 	},
 	"devDependencies": {
 		"chai": "*",
 		"mocha": "*",
 		"promises-aplus-tests": "*"
 	},
-	"scripts": {
-		"test": "mocha -R spec -t 5000 -s 1000 && promises-aplus-tests test/promise-adapter.js"
-	},
-	"main": "lib/ff"
+	"engines": {
+		"node": ">=0.6.0"
+	}
 }

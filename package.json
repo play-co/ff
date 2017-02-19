@@ -11,7 +11,7 @@
 		"Michael Henretty <michael.henretty@gmail.com>",
 		"Teddy Cross <teddy@tkaz.ec> (http://tkaz.ec)"
 	],
-	"main": "lib/ff",
+	"main": "lib/ff.js",
 	"repository": "git://github.com/gameclosure/ff",
 	"scripts": {
 		"test": "mocha -R spec && promises-aplus-tests test/promise-adapter.js"

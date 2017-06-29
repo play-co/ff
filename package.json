@@ -1,6 +1,6 @@
 {
 	"name": "ff",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"license": "MIT",
 	"description": "Concise, Powerful Asynchronous Flow Control in JavaScript.",
 	"keywords": ["async", "flow control"],
